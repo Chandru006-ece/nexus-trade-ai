@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: nexustrade-ai-backend
+    name: nexustrade_ai_backend
     runtime: docker
     dockerfilePath: ./Dockerfile
     envVars:

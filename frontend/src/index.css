@@ -3,18 +3,21 @@
 
 :root {
   --bg-primary: #0A192F;
-  --bg-secondary: #112240;
-  --bg-card: #1A2D4A;
-  --bg-card-hover: #1F3455;
+  --bg-secondary: #0F1F3A;
+  --bg-card: #152847;
+  --bg-card-hover: #1B3258;
   --accent-blue: #1E3A8A;
-  --accent-blue-light: #3B5FBF;
+  --accent-blue-light: #3B82F6;
   --accent-green: #00D1B2;
   --accent-green-dim: rgba(0, 209, 178, 0.12);
+  --accent-purple: #8B5CF6;
+  --accent-orange: #F59E0B;
+  --accent-red: #EF4444;
   --text-primary: #E2E8F0;
   --text-secondary: #94A3B8;
   --text-muted: #64748B;
   --border: #1E3A5F;
-  --border-light: #243B5E;
+  --border-light: #2A4A70;
   --glow-green: rgba(0, 209, 178, 0.35);
   --glow-blue: rgba(30, 58, 138, 0.35);
 }
@@ -34,10 +37,12 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ── Keyframe Animations ── */
+/* ══════════════════════════════════════════════
+   KEYFRAME ANIMATIONS
+   ══════════════════════════════════════════════ */
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
+  from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
@@ -67,12 +72,50 @@ body {
 }
 
 @keyframes gradientShift {
-  0%   { background-position: 0% 50%; }
-  50%  { background-position: 100% 50%; }
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
   100% { background-position: 0% 50%; }
 }
 
-/* ── Utility Classes ── */
+/* Route drawing animation */
+@keyframes drawRoute {
+  from { stroke-dashoffset: 2000; }
+  to { stroke-dashoffset: 0; }
+}
+
+/* Moving parcel dot */
+@keyframes moveDot {
+  0% { offset-distance: 0%; }
+  100% { offset-distance: 100%; }
+}
+
+/* Step indicator pulse */
+@keyframes stepPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(0, 209, 178, 0.4); }
+  50% { box-shadow: 0 0 0 8px rgba(0, 209, 178, 0); }
+}
+
+/* Glow pulse for best route card */
+@keyframes glowPulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(0,209,178,0.15), 0 0 40px rgba(0,209,178,0.05); }
+  50% { box-shadow: 0 0 30px rgba(0,209,178,0.25), 0 0 60px rgba(0,209,178,0.1); }
+}
+
+/* Carbon bar fill */
+@keyframes barFill {
+  from { width: 0; }
+  to { width: var(--bar-width); }
+}
+
+/* Slide in from right */
+@keyframes slideInRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ══════════════════════════════════════════════
+   UTILITY CLASSES
+   ══════════════════════════════════════════════ */
 
 .animate-fade-in {
   animation: fadeIn 0.5s ease forwards;
@@ -86,15 +129,21 @@ body {
   animation: spinSmooth 1s linear infinite;
 }
 
-/* ── Card Styles ── */
+.animate-slide-in {
+  animation: slideInRight 0.5s ease forwards;
+}
+
+/* ══════════════════════════════════════════════
+   CARD STYLES
+   ══════════════════════════════════════════════ */
 
 .glass-card {
   background: linear-gradient(
     135deg,
-    rgba(26, 45, 74, 0.8) 0%,
-    rgba(17, 34, 64, 0.6) 100%
+    rgba(21, 40, 71, 0.85) 0%,
+    rgba(15, 31, 58, 0.65) 100%
   );
-  backdrop-filter: blur(12px);
+  backdrop-filter: blur(16px);
   border: 1px solid var(--border);
   border-radius: 16px;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -102,34 +151,50 @@ body {
 
 .glass-card:hover {
   border-color: var(--border-light);
-  background: linear-gradient(
-    135deg,
-    rgba(31, 52, 85, 0.85) 0%,
-    rgba(17, 34, 64, 0.7) 100%
-  );
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
 }
 
-.best-route-glow {
-  box-shadow: 0 0 20px rgba(0, 209, 178, 0.1),
-              0 0 40px rgba(0, 209, 178, 0.05);
-  border-color: rgba(0, 209, 178, 0.3) !important;
-  transition: box-shadow 0.5s ease, border-color 0.5s ease;
+/* Route card specific */
+.route-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  cursor: default;
 }
 
-.best-route-glow:hover {
-  box-shadow: 0 0 30px rgba(0, 209, 178, 0.2),
-              0 0 60px rgba(0, 209, 178, 0.08);
-  border-color: rgba(0, 209, 178, 0.5) !important;
+.route-card:hover {
+  border-color: var(--border-light);
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
 }
 
-/* ── Button Styles ── */
+/* Best route card */
+.best-route-card {
+  background: linear-gradient(135deg, rgba(0,209,178,0.08) 0%, rgba(0,209,178,0.02) 100%);
+  border: 2px solid rgba(0, 209, 178, 0.35);
+  border-radius: 18px;
+  animation: glowPulse 3s ease-in-out infinite;
+}
+
+.best-route-card:hover {
+  border-color: rgba(0, 209, 178, 0.5);
+}
+
+/* ══════════════════════════════════════════════
+   BUTTON STYLES
+   ══════════════════════════════════════════════ */
 
 .btn-optimize {
   position: relative;
   overflow: hidden;
-  background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-light));
-  border: 1px solid rgba(59, 95, 191, 0.3);
+  background: linear-gradient(135deg, #1E3A8A, #3B82F6);
+  border: 1px solid rgba(59, 130, 246, 0.3);
   transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 16px rgba(30, 58, 138, 0.3);
 }
 
 .btn-optimize::before {
@@ -139,7 +204,7 @@ body {
   background: linear-gradient(
     135deg,
     transparent,
-    rgba(255,255,255,0.06),
+    rgba(255,255,255,0.08),
     transparent
   );
   opacity: 0;
@@ -151,9 +216,9 @@ body {
 }
 
 .btn-optimize:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 30px rgba(30, 58, 138, 0.5),
-              0 2px 8px rgba(30, 58, 138, 0.3);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(30, 58, 138, 0.5),
+              0 2px 8px rgba(59, 130, 246, 0.3);
 }
 
 .btn-optimize:active:not(:disabled) {
@@ -165,22 +230,27 @@ body {
   cursor: not-allowed;
   background: var(--bg-card);
   border-color: var(--border);
+  box-shadow: none;
 }
 
-/* ── Loading shimmer ── */
+/* ══════════════════════════════════════════════
+   LOADING & SHIMMER
+   ══════════════════════════════════════════════ */
 
 .loading-shimmer {
   background: linear-gradient(
     90deg,
     transparent 25%,
-    rgba(0, 209, 178, 0.08) 50%,
+    rgba(0, 209, 178, 0.06) 50%,
     transparent 75%
   );
   background-size: 200% 100%;
   animation: shimmer 1.5s ease-in-out infinite;
 }
 
-/* ── Gradient text ── */
+/* ══════════════════════════════════════════════
+   GRADIENT TEXT
+   ══════════════════════════════════════════════ */
 
 .gradient-text {
   background: linear-gradient(135deg, var(--accent-green), #00E5C7);
@@ -189,7 +259,71 @@ body {
   -webkit-text-fill-color: transparent;
 }
 
-/* ── Leaflet Overrides ── */
+/* ══════════════════════════════════════════════
+   DATA VISUALIZATION BARS
+   ══════════════════════════════════════════════ */
+
+.data-bar-track {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.data-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  width: var(--bar-width, 0%);
+  animation: barFill 0.8s ease forwards;
+  transition: width 0.5s ease;
+}
+
+/* ══════════════════════════════════════════════
+   STEP INDICATOR
+   ══════════════════════════════════════════════ */
+
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.step-indicator.active {
+  background: rgba(0, 209, 178, 0.06);
+}
+
+.step-indicator.completed {
+  opacity: 0.5;
+}
+
+.step-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.step-dot.active {
+  background: var(--accent-green);
+  animation: stepPulse 1.5s ease-in-out infinite;
+}
+
+.step-dot.completed {
+  background: var(--accent-green);
+}
+
+.step-dot.pending {
+  background: var(--text-muted);
+  opacity: 0.3;
+}
+
+/* ══════════════════════════════════════════════
+   LEAFLET OVERRIDES
+   ══════════════════════════════════════════════ */
 
 .leaflet-container {
   background: var(--bg-secondary) !important;
@@ -223,7 +357,9 @@ body {
   background: var(--bg-card) !important;
 }
 
-/* ── Scrollbar ── */
+/* ══════════════════════════════════════════════
+   SCROLLBAR
+   ══════════════════════════════════════════════ */
 
 ::-webkit-scrollbar {
   width: 5px;
@@ -242,9 +378,35 @@ body {
   background: var(--accent-blue);
 }
 
-/* ── Selection ── */
+/* ══════════════════════════════════════════════
+   SELECTION & MISC
+   ══════════════════════════════════════════════ */
 
 ::selection {
   background: rgba(0, 209, 178, 0.3);
   color: white;
+}
+
+/* Delay badge styles */
+.delay-badge {
+  padding: 2px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+}
+
+.delay-badge.low {
+  background: rgba(0, 209, 178, 0.12);
+  color: var(--accent-green);
+}
+
+.delay-badge.medium {
+  background: rgba(245, 158, 11, 0.12);
+  color: var(--accent-orange);
+}
+
+.delay-badge.high {
+  background: rgba(239, 68, 68, 0.12);
+  color: var(--accent-red);
 }
