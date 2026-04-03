@@ -6,11 +6,11 @@ import DataPanel from './components/DataPanel';
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
 const STEPS = [
-  { id: 1, label: 'Generate Routes' },
-  { id: 2, label: 'Analyze Distance' },
-  { id: 3, label: 'Evaluate Carbon' },
-  { id: 4, label: 'Predict Delay' },
-  { id: 5, label: 'Select Best' },
+  { id: 1, label: 'Generating routes\n(ParcelFlow)' },
+  { id: 2, label: 'Calculating\nDistances' },
+  { id: 3, label: 'Evaluating\nCarbon' },
+  { id: 4, label: 'Predicting Delay\n(TradeMind AI)' },
+  { id: 5, label: 'Selecting\nOptimal Route' },
 ];
 
 export default function App() {
@@ -19,6 +19,9 @@ export default function App() {
   const [currentStep, setCurrentStep] = useState(0);
   const [error, setError] = useState(null);
   const [animateMap, setAnimateMap] = useState(false);
+  // Default selected order
+  const [sourceNode, setSourceNode] = useState('A');
+  const [destNode, setDestNode] = useState('E');
 
   const handleOptimize = async () => {
     setLoading(true);
@@ -26,14 +29,17 @@ export default function App() {
     setError(null);
     setAnimateMap(false);
 
-    setCurrentStep(1);
+    // AI Step-by-step thinking simulation (approx 3-4s total)
+    setCurrentStep(1); // Generating
+    await delay(600);
+    setCurrentStep(2); // Distance
     await delay(500);
-    setCurrentStep(2);
-    await delay(400);
-    setCurrentStep(3);
-
+    setCurrentStep(3); // Carbon
+    
     try {
-      const res = await fetch(`${API_URL}/optimize`);
+      // In a real app we'd pass sourceNode/destNode. For now the backend 
+      // is hardcoded to A -> E, but we simulate it visually.
+      const res = await fetch(`${API_URL}/optimize?source=${sourceNode}&dest=${destNode}`);
       if (!res.ok) {
         const body = await res.json().catch(() => null);
         throw new Error(body?.error || `Server error ${res.status}`);
@@ -41,10 +47,10 @@ export default function App() {
       const result = await res.json();
       if (result.error) throw new Error(result.error);
 
-      setCurrentStep(4);
+      setCurrentStep(4); // Predict delay 
+      await delay(800);  // Make the AI delay calculation feel heavy
+      setCurrentStep(5); // Select optimal
       await delay(500);
-      setCurrentStep(5);
-      await delay(400);
 
       setData(result);
       setAnimateMap(true);
@@ -56,7 +62,7 @@ export default function App() {
       );
     } finally {
       setLoading(false);
-      setTimeout(() => setCurrentStep(0), 1500);
+      setTimeout(() => setCurrentStep(0), 2000);
     }
   };
 
@@ -64,22 +70,19 @@ export default function App() {
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0B1120' }}>
       <Header />
 
-      {/* ═══ Horizontal Step Bar (dark zone) ═══ */}
+      {/* ═══ Horizontal Step Bar (System process visibility) ═══ */}
       {(loading || currentStep > 0) && (
-        <div style={{ padding: '12px 24px 0' }}>
+        <div style={{ padding: '20px 32px 0' }}>
           <div className="step-bar">
             {STEPS.map((step, i) => {
               const isActive = step.id === currentStep;
               const isCompleted = step.id < currentStep;
               return (
-                <div key={step.id} style={{ display: 'flex', alignItems: 'center' }}>
+                <div key={step.id} style={{ display: 'flex', alignItems: 'center', flex: i < STEPS.length - 1 ? 1 : 0 }}>
                   <div className={`step-item ${isActive ? 'active' : isCompleted ? 'completed' : ''}`}>
-                    <div className={`step-dot ${isActive ? 'active' : isCompleted ? 'completed' : 'pending'}`} />
-                    <span style={{
-                      fontSize: 12, fontWeight: isActive ? 700 : 500,
-                      color: isActive ? '#10B981' : isCompleted ? '#34D399' : '#4B5563',
-                    }}>
-                      {isCompleted ? '✓ ' : ''}{step.label}
+                    <div className="step-dot" />
+                    <span className="step-label" style={{ whiteSpace: 'pre-line', marginTop: 8, lineHeight: 1.3 }}>
+                      {step.label}
                     </span>
                   </div>
                   {i < STEPS.length - 1 && (
@@ -106,7 +109,7 @@ export default function App() {
                 </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ width: 14, height: 4, borderRadius: 2, background: '#10B981', display: 'inline-block' }} />
-                  <span style={{ color: '#10B981', fontWeight: 600 }}>Best</span>
+                  <span style={{ color: '#10B981', fontWeight: 600 }}>Optimal Selection</span>
                 </span>
               </div>
             )}
@@ -114,7 +117,7 @@ export default function App() {
           <div style={{
             flex: 1, borderRadius: 18, overflow: 'hidden',
             border: '1px solid rgba(31,46,64,0.6)',
-            boxShadow: '0 4px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)',
+            boxShadow: '0 4px 30px rgba(0,0,0,0.3)',
           }}>
             <MapView data={data} animate={animateMap} />
           </div>
@@ -122,7 +125,7 @@ export default function App() {
 
         {/* ── LIGHT ANALYTICS PANEL (RIGHT) ── */}
         <div style={{
-          width: 400,
+          width: 440, // Increased width slightly to fit order details and cards better
           borderRadius: 18,
           background: 'var(--light-bg)',
           border: '1px solid rgba(229,231,235,0.8)',
@@ -136,6 +139,10 @@ export default function App() {
             error={error}
             onOptimize={handleOptimize}
             onDismissError={() => setError(null)}
+            sourceNode={sourceNode}
+            destNode={destNode}
+            setSourceNode={setSourceNode}
+            setDestNode={setDestNode}
           />
         </div>
       </div>
