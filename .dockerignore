@@ -1,0 +1,16 @@
+# Backend
+backend/node_modules/
+
+# Python
+python/__pycache__/
+python/*.pyc
+
+# Frontend (deployed separately on Vercel)
+frontend/
+
+# Misc
+.git/
+.gitignore
+README.md
+LICENSE
+*.md

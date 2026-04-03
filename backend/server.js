@@ -9,9 +9,13 @@ const { exec } = require("child_process");
 const path = require("path");
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+app.use(
+  cors({
+    origin: process.env.CORS_ORIGIN || "*",
+  })
+);
 app.use(express.json());
 
 const PYTHON_DIR = path.join(__dirname, "..", "python");
@@ -53,3 +57,4 @@ app.get("/health", (req, res) => {
 app.listen(PORT, () => {
   console.log(`NexusTrade AI Backend running on http://localhost:${PORT}`);
 });
+

@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: nexustrade-ai-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: PORT
+        value: 3000
+      - key: CORS_ORIGIN
+        value: "*"
+    healthCheckPath: /health
