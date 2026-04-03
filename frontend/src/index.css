@@ -1,0 +1,250 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  --bg-primary: #0A192F;
+  --bg-secondary: #112240;
+  --bg-card: #1A2D4A;
+  --bg-card-hover: #1F3455;
+  --accent-blue: #1E3A8A;
+  --accent-blue-light: #3B5FBF;
+  --accent-green: #00D1B2;
+  --accent-green-dim: rgba(0, 209, 178, 0.12);
+  --text-primary: #E2E8F0;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --border: #1E3A5F;
+  --border-light: #243B5E;
+  --glow-green: rgba(0, 209, 178, 0.35);
+  --glow-blue: rgba(30, 58, 138, 0.35);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Keyframe Animations ── */
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes hubGlow {
+  0%, 100% { box-shadow: 0 2px 12px rgba(0,209,178,0.4); }
+  50% { box-shadow: 0 2px 28px rgba(0,209,178,0.7); }
+}
+
+@keyframes pulseRing {
+  0% { transform: scale(0.95); opacity: 1; }
+  70% { transform: scale(1.15); opacity: 0; }
+  100% { transform: scale(0.95); opacity: 0; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+@keyframes spinSmooth {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes gradientShift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* ── Utility Classes ── */
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease forwards;
+}
+
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease forwards;
+}
+
+.animate-spin-smooth {
+  animation: spinSmooth 1s linear infinite;
+}
+
+/* ── Card Styles ── */
+
+.glass-card {
+  background: linear-gradient(
+    135deg,
+    rgba(26, 45, 74, 0.8) 0%,
+    rgba(17, 34, 64, 0.6) 100%
+  );
+  backdrop-filter: blur(12px);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-card:hover {
+  border-color: var(--border-light);
+  background: linear-gradient(
+    135deg,
+    rgba(31, 52, 85, 0.85) 0%,
+    rgba(17, 34, 64, 0.7) 100%
+  );
+}
+
+.best-route-glow {
+  box-shadow: 0 0 20px rgba(0, 209, 178, 0.1),
+              0 0 40px rgba(0, 209, 178, 0.05);
+  border-color: rgba(0, 209, 178, 0.3) !important;
+  transition: box-shadow 0.5s ease, border-color 0.5s ease;
+}
+
+.best-route-glow:hover {
+  box-shadow: 0 0 30px rgba(0, 209, 178, 0.2),
+              0 0 60px rgba(0, 209, 178, 0.08);
+  border-color: rgba(0, 209, 178, 0.5) !important;
+}
+
+/* ── Button Styles ── */
+
+.btn-optimize {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-blue-light));
+  border: 1px solid rgba(59, 95, 191, 0.3);
+  transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.btn-optimize::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    135deg,
+    transparent,
+    rgba(255,255,255,0.06),
+    transparent
+  );
+  opacity: 0;
+  transition: opacity 0.35s ease;
+}
+
+.btn-optimize:hover:not(:disabled)::before {
+  opacity: 1;
+}
+
+.btn-optimize:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 30px rgba(30, 58, 138, 0.5),
+              0 2px 8px rgba(30, 58, 138, 0.3);
+}
+
+.btn-optimize:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.btn-optimize:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--bg-card);
+  border-color: var(--border);
+}
+
+/* ── Loading shimmer ── */
+
+.loading-shimmer {
+  background: linear-gradient(
+    90deg,
+    transparent 25%,
+    rgba(0, 209, 178, 0.08) 50%,
+    transparent 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s ease-in-out infinite;
+}
+
+/* ── Gradient text ── */
+
+.gradient-text {
+  background: linear-gradient(135deg, var(--accent-green), #00E5C7);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ── Leaflet Overrides ── */
+
+.leaflet-container {
+  background: var(--bg-secondary) !important;
+  border-radius: 16px;
+}
+
+.leaflet-tile-pane {
+  filter: brightness(0.55) contrast(1.25) saturate(0.3) hue-rotate(180deg);
+}
+
+.leaflet-control-zoom a {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-color: var(--border) !important;
+  transition: all 0.2s ease;
+}
+
+.leaflet-control-zoom a:hover {
+  background: var(--bg-card-hover) !important;
+}
+
+.leaflet-popup-content-wrapper {
+  background: var(--bg-card) !important;
+  color: var(--text-primary) !important;
+  border-radius: 12px !important;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5) !important;
+  border: 1px solid var(--border) !important;
+}
+
+.leaflet-popup-tip {
+  background: var(--bg-card) !important;
+}
+
+/* ── Scrollbar ── */
+
+::-webkit-scrollbar {
+  width: 5px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-blue);
+}
+
+/* ── Selection ── */
+
+::selection {
+  background: rgba(0, 209, 178, 0.3);
+  color: white;
+}
