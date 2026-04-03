@@ -5,12 +5,12 @@ import DataPanel from './components/DataPanel';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000';
 
-const LOADING_STEPS = [
-  { id: 1, label: 'Generating possible routes…' },
-  { id: 2, label: 'Calculating distance metrics…' },
-  { id: 3, label: 'Evaluating carbon emissions…' },
-  { id: 4, label: 'Predicting delay using TradeMind AI…' },
-  { id: 5, label: 'Selecting optimal route…' },
+const STEPS = [
+  { id: 1, label: 'Generate Routes' },
+  { id: 2, label: 'Analyze Distance' },
+  { id: 3, label: 'Evaluate Carbon' },
+  { id: 4, label: 'Predict Delay' },
+  { id: 5, label: 'Select Best' },
 ];
 
 export default function App() {
@@ -25,11 +25,11 @@ export default function App() {
     setData(null);
     setError(null);
     setAnimateMap(false);
-    setCurrentStep(1);
 
-    await delay(600);
-    setCurrentStep(2);
+    setCurrentStep(1);
     await delay(500);
+    setCurrentStep(2);
+    await delay(400);
     setCurrentStep(3);
 
     try {
@@ -42,14 +42,13 @@ export default function App() {
       if (result.error) throw new Error(result.error);
 
       setCurrentStep(4);
-      await delay(600);
-      setCurrentStep(5);
       await delay(500);
+      setCurrentStep(5);
+      await delay(400);
 
       setData(result);
       setAnimateMap(true);
     } catch (err) {
-      console.error('Optimization failed:', err);
       setError(
         err.message === 'Failed to fetch'
           ? 'Cannot reach backend. Ensure it is running on ' + API_URL
@@ -57,92 +56,83 @@ export default function App() {
       );
     } finally {
       setLoading(false);
-      setCurrentStep(0);
+      setTimeout(() => setCurrentStep(0), 1500);
     }
   };
 
   return (
-    <div style={{
-      display: 'flex',
-      flexDirection: 'column',
-      height: '100vh',
-      background: 'var(--bg-primary)',
-    }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#F8FAFC' }}>
       <Header />
 
-      {/* Main Content */}
-      <div style={{
-        display: 'flex',
-        flex: 1,
-        overflow: 'hidden',
-      }}>
-        {/* MAP SECTION (LEFT) */}
-        <div style={{
-          flex: 1,
-          padding: 20,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 12,
-        }}>
-          {/* Map label */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{
-                fontSize: 10,
-                fontWeight: 700,
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase',
-                color: 'var(--text-muted)',
-              }}>
-                🗺️ Route Visualization
-              </span>
-            </div>
+      {/* ── Horizontal Step Bar ── */}
+      {(loading || currentStep > 0) && (
+        <div style={{ padding: '12px 24px 0' }}>
+          <div className="step-bar">
+            {STEPS.map((step, i) => {
+              const isActive = step.id === currentStep;
+              const isCompleted = step.id < currentStep;
+              return (
+                <div key={step.id} style={{ display: 'flex', alignItems: 'center' }}>
+                  <div className={`step-item ${isActive ? 'active' : isCompleted ? 'completed' : ''}`}>
+                    <div className={`step-dot ${isActive ? 'active' : isCompleted ? 'completed' : 'pending'}`} />
+                    <span style={{
+                      fontSize: 12, fontWeight: isActive ? 700 : 500,
+                      color: isActive ? '#10B981' : isCompleted ? '#10B981' : '#94A3B8',
+                    }}>
+                      {isCompleted ? '✓ ' : ''}{step.label}
+                    </span>
+                  </div>
+                  {i < STEPS.length - 1 && (
+                    <div className={`step-connector ${isCompleted ? 'done' : ''}`} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* ── Main Content ── */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', padding: '16px 24px 24px' }}>
+        {/* MAP (LEFT) */}
+        <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, marginRight: 20 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <span className="section-label" style={{ borderBottom: 'none', marginBottom: 0, paddingBottom: 0 }}>
+              🗺️ Route Visualization
+            </span>
             {data && (
-              <div style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 16,
-                fontSize: 11,
-              }}>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 16, height: 3, borderRadius: 2, background: '#3B82F6', display: 'inline-block' }} />
-                  <span style={{ color: 'var(--text-secondary)' }}>Route 1</span>
+              <div style={{ display: 'flex', gap: 14, fontSize: 11 }}>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 14, height: 3, borderRadius: 2, background: '#3B82F6', display: 'inline-block' }} />
+                  <span style={{ color: '#64748B' }}>Routes</span>
                 </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 16, height: 3, borderRadius: 2, background: '#8B5CF6', display: 'inline-block' }} />
-                  <span style={{ color: 'var(--text-secondary)' }}>Route 2</span>
-                </span>
-                <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span style={{ width: 16, height: 4, borderRadius: 2, background: '#00D1B2', display: 'inline-block' }} />
-                  <span style={{ color: 'var(--accent-green)' }}>Best Route</span>
+                <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 14, height: 4, borderRadius: 2, background: '#10B981', display: 'inline-block' }} />
+                  <span style={{ color: '#10B981', fontWeight: 600 }}>Best Route</span>
                 </span>
               </div>
             )}
           </div>
-
-          {/* Map */}
-          <div style={{ flex: 1, borderRadius: 18, overflow: 'hidden', border: '1px solid var(--border)' }}>
+          <div style={{
+            flex: 1, borderRadius: 18, overflow: 'hidden',
+            border: '1px solid #E5E7EB',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+          }}>
             <MapView data={data} animate={animateMap} />
           </div>
         </div>
 
-        {/* ANALYTICS PANEL (RIGHT) */}
+        {/* ANALYTICS (RIGHT) */}
         <div style={{
-          width: 420,
-          borderLeft: '1px solid var(--border)',
-          background: 'var(--bg-secondary)',
-          overflowY: 'auto',
+          width: 400, overflowY: 'auto',
+          background: 'white', borderRadius: 18,
+          border: '1px solid #E5E7EB',
+          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
           padding: 20,
         }}>
           <DataPanel
             data={data}
             loading={loading}
-            currentStep={currentStep}
-            steps={LOADING_STEPS}
             error={error}
             onOptimize={handleOptimize}
             onDismissError={() => setError(null)}

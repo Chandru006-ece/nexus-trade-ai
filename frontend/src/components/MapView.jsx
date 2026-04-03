@@ -1,8 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { MapContainer, TileLayer, Marker, Polyline, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, Marker, Polyline, Tooltip } from 'react-leaflet';
 import L from 'leaflet';
 
-// Hub coordinates — major Indian logistics cities
 const HUB_COORDS = {
   A: [28.6139, 77.2090],   // Delhi
   B: [19.0760, 72.8777],   // Mumbai
@@ -19,47 +18,83 @@ const HUB_NAMES = {
   E: 'Chennai (Hub E)',
 };
 
-// Graph edges
 const GRAPH_EDGES = [
   ['A', 'B'], ['A', 'C'], ['B', 'C'], ['B', 'D'],
   ['C', 'D'], ['C', 'E'], ['D', 'E'], ['A', 'D'], ['B', 'E'],
 ];
 
-// Route colors for non-best routes
-const ROUTE_COLORS = ['#3B82F6', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4', '#F97316'];
+const ROUTE_COLORS = ['#3B82F6', '#8B5CF6', '#F59E0B', '#EC4899', '#06B6D4'];
 
+/* ── Create curved path between two points for 3D depth feel ── */
+function getCurvedPath(from, to, curvature = 0.15) {
+  const points = [];
+  const midLat = (from[0] + to[0]) / 2;
+  const midLng = (from[1] + to[1]) / 2;
+  const dx = to[1] - from[1];
+  const dy = to[0] - from[0];
+  const controlLat = midLat + dx * curvature;
+  const controlLng = midLng - dy * curvature;
+  const steps = 30;
+  for (let i = 0; i <= steps; i++) {
+    const t = i / steps;
+    const lat = (1 - t) * (1 - t) * from[0] + 2 * (1 - t) * t * controlLat + t * t * to[0];
+    const lng = (1 - t) * (1 - t) * from[1] + 2 * (1 - t) * t * controlLng + t * t * to[1];
+    points.push([lat, lng]);
+  }
+  return points;
+}
+
+/* ── Get full curved path for a multi-node route ── */
+function getRoutePath(path) {
+  const positions = [];
+  for (let i = 0; i < path.length - 1; i++) {
+    const from = HUB_COORDS[path[i]];
+    const to = HUB_COORDS[path[i + 1]];
+    const curve = getCurvedPath(from, to, 0.12);
+    if (i > 0) curve.shift(); // avoid duplicate junction points
+    positions.push(...curve);
+  }
+  return positions;
+}
+
+/* ── Hub marker with 3D shadow effect ── */
 function createHubIcon(label, isOnBestRoute) {
   const bg = isOnBestRoute
-    ? 'linear-gradient(135deg, #00D1B2, #00E5C7)'
-    : 'linear-gradient(135deg, #1E3A8A, #3B82F6)';
-  const border = isOnBestRoute ? '#00D1B2' : '#3B82F6';
-  const shadow = isOnBestRoute
-    ? '0 2px 16px rgba(0,209,178,0.5)'
-    : '0 2px 12px rgba(30,58,138,0.4)';
-  const size = isOnBestRoute ? 42 : 36;
+    ? 'linear-gradient(180deg, #34D399, #10B981)'
+    : 'linear-gradient(180deg, #60A5FA, #2563EB)';
+  const borderColor = isOnBestRoute ? '#10B981' : '#2563EB';
+  const size = isOnBestRoute ? 44 : 38;
   const fontSize = isOnBestRoute ? 15 : 13;
-  const glow = isOnBestRoute ? 'animation: hubGlow 2s ease-in-out infinite;' : '';
 
   return L.divIcon({
     className: 'custom-hub-icon',
-    html: `<div style="
-      width: ${size}px; height: ${size}px;
-      border-radius: 50%;
-      background: ${bg};
-      border: 3px solid ${border};
-      display: flex; align-items: center; justify-content: center;
-      color: white; font-weight: 700; font-size: ${fontSize}px;
-      font-family: 'Inter', sans-serif;
-      box-shadow: ${shadow};
-      ${glow}
-    ">${label}</div>`,
-    iconSize: [size, size],
-    iconAnchor: [size / 2, size / 2],
+    html: `<div style="position:relative;">
+      <!-- Shadow -->
+      <div style="
+        position:absolute; top:4px; left:2px;
+        width:${size}px; height:${size}px; border-radius:50%;
+        background:rgba(0,0,0,0.12); filter:blur(4px);
+      "></div>
+      <!-- Main circle -->
+      <div style="
+        position:relative;
+        width:${size}px; height:${size}px; border-radius:50%;
+        background:${bg};
+        border:3px solid ${borderColor};
+        display:flex; align-items:center; justify-content:center;
+        color:white; font-weight:700; font-size:${fontSize}px;
+        font-family:'Inter',sans-serif;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        ${isOnBestRoute ? 'animation: hubFloat 3s ease-in-out infinite;' : ''}
+      ">${label}</div>
+    </div>`,
+    iconSize: [size + 4, size + 8],
+    iconAnchor: [(size + 4) / 2, (size + 8) / 2],
   });
 }
 
-/* ── Animated polyline that draws itself ── */
-function AnimatedPolyline({ positions, color, weight, animate, delay: animDelay = 0 }) {
+/* ── Animated Polyline with progressive drawing ── */
+function AnimatedPolyline({ positions, color, weight, animate, delay: animDelay = 0, opacity = 0.9 }) {
   const [progress, setProgress] = useState(animate ? 0 : 1);
 
   useEffect(() => {
@@ -81,66 +116,44 @@ function AnimatedPolyline({ positions, color, weight, animate, delay: animDelay 
 
   if (progress <= 0 || positions.length < 2) return null;
 
-  // Interpolate along the path
-  const totalSegments = positions.length - 1;
-  const targetProgress = progress * totalSegments;
-  const visiblePositions = [];
-
-  for (let i = 0; i <= totalSegments; i++) {
-    if (i <= targetProgress) {
-      visiblePositions.push(positions[i]);
-    }
-  }
-
-  // Add interpolated point
-  if (Math.floor(targetProgress) < totalSegments) {
-    const segIndex = Math.floor(targetProgress);
-    const segProgress = targetProgress - segIndex;
-    const from = positions[segIndex];
-    const to = positions[segIndex + 1];
-    visiblePositions.push([
-      from[0] + (to[0] - from[0]) * segProgress,
-      from[1] + (to[1] - from[1]) * segProgress,
-    ]);
-  }
+  const totalPoints = positions.length;
+  const visibleCount = Math.max(2, Math.ceil(progress * totalPoints));
+  const visiblePositions = positions.slice(0, visibleCount);
 
   return (
     <Polyline
       positions={visiblePositions}
-      pathOptions={{ color, weight, opacity: 0.9 }}
+      pathOptions={{ color, weight, opacity }}
     />
   );
 }
 
-/* ── Moving parcel dot along best route ── */
+/* ── Moving parcel dot ── */
 function ParcelDot({ positions, animate }) {
-  const markerRef = useRef(null);
   const [dotPos, setDotPos] = useState(null);
 
   useEffect(() => {
     if (!animate || positions.length < 2) return;
     let cancelled = false;
-    const totalSegments = positions.length - 1;
-    const duration = 4000;
+    const duration = 5000;
 
     const tick = (startTime) => (now) => {
       if (cancelled) return;
-      const elapsed = (now - startTime) % duration;
-      const progress = elapsed / duration;
-      const target = progress * totalSegments;
-      const segIndex = Math.min(Math.floor(target), totalSegments - 1);
-      const segProgress = target - segIndex;
-      const from = positions[segIndex];
-      const to = positions[segIndex + 1] || from;
+      const t = ((now - startTime) % duration) / duration;
+      const totalLen = positions.length - 1;
+      const target = t * totalLen;
+      const idx = Math.min(Math.floor(target), totalLen - 1);
+      const frac = target - idx;
+      const from = positions[idx];
+      const to = positions[idx + 1] || from;
       setDotPos([
-        from[0] + (to[0] - from[0]) * segProgress,
-        from[1] + (to[1] - from[1]) * segProgress,
+        from[0] + (to[0] - from[0]) * frac,
+        from[1] + (to[1] - from[1]) * frac,
       ]);
       requestAnimationFrame(tick(startTime));
     };
 
-    const startTime = performance.now();
-    requestAnimationFrame(tick(startTime));
+    requestAnimationFrame(tick(performance.now()));
     return () => { cancelled = true; };
   }, [animate, positions]);
 
@@ -148,18 +161,15 @@ function ParcelDot({ positions, animate }) {
 
   const icon = L.divIcon({
     className: 'parcel-dot',
-    html: `<div style="
-      width: 14px; height: 14px;
-      background: #00D1B2;
-      border-radius: 50%;
-      border: 3px solid white;
-      box-shadow: 0 0 16px rgba(0,209,178,0.7), 0 0 32px rgba(0,209,178,0.3);
-    "></div>`,
-    iconSize: [14, 14],
-    iconAnchor: [7, 7],
+    html: `<div style="position:relative;">
+      <div style="position:absolute;top:2px;left:1px;width:14px;height:14px;border-radius:50%;background:rgba(0,0,0,0.15);filter:blur(3px);"></div>
+      <div style="position:relative;width:14px;height:14px;background:#10B981;border-radius:50%;border:3px solid white;box-shadow:0 2px 12px rgba(16,185,129,0.5);"></div>
+    </div>`,
+    iconSize: [16, 18],
+    iconAnchor: [8, 9],
   });
 
-  return <Marker ref={markerRef} position={dotPos} icon={icon} />;
+  return <Marker position={dotPos} icon={icon} />;
 }
 
 export default function MapView({ data, animate }) {
@@ -169,104 +179,77 @@ export default function MapView({ data, animate }) {
 
   const isEdgeOnBestPath = (a, b) => {
     for (let i = 0; i < bestPath.length - 1; i++) {
-      if (
-        (bestPath[i] === a && bestPath[i + 1] === b) ||
-        (bestPath[i] === b && bestPath[i + 1] === a)
-      ) return true;
+      if ((bestPath[i] === a && bestPath[i + 1] === b) || (bestPath[i] === b && bestPath[i + 1] === a)) return true;
     }
     return false;
   };
 
-  // Get non-best routes for colored rendering
-  const nonBestRoutes = routes.filter(
-    r => r.path.join(',') !== bestPath.join(',')
-  );
+  const nonBestRoutes = routes.filter(r => r.path.join(',') !== bestPath.join(','));
+  const bestRoutePath = bestPath.length > 1 ? getRoutePath(bestPath) : [];
 
   return (
-    <div style={{ height: '100%', width: '100%', position: 'relative' }}>
-      <MapContainer
-        center={center}
-        zoom={5}
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={true}
-        attributionControl={false}
-      >
+    <div style={{ height: '100%', width: '100%' }}>
+      <MapContainer center={center} zoom={5} style={{ height: '100%', width: '100%' }}
+        zoomControl={true} attributionControl={false}>
+        {/* Light theme tiles */}
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
           attribution=""
         />
 
-        {/* Background edges — dim dashed lines */}
+        {/* Background edges — soft dashed */}
         {GRAPH_EDGES.map(([a, b]) => {
-          const isBest = data && isEdgeOnBestPath(a, b);
-          if (isBest) return null;
+          if (data && isEdgeOnBestPath(a, b)) return null;
+          const curved = getCurvedPath(HUB_COORDS[a], HUB_COORDS[b], 0.1);
           return (
-            <Polyline
-              key={`bg-${a}-${b}`}
-              positions={[HUB_COORDS[a], HUB_COORDS[b]]}
-              pathOptions={{
-                color: '#1E3A5F',
-                weight: 1.5,
-                opacity: 0.3,
-                dashArray: '6 6',
-              }}
-            />
+            <Polyline key={`bg-${a}-${b}`} positions={curved}
+              pathOptions={{ color: '#CBD5E1', weight: 1.5, opacity: 0.5, dashArray: '6 4' }} />
           );
         })}
 
-        {/* Non-best routes — colored lines */}
+        {/* Non-best routes — colored */}
         {nonBestRoutes.map((route, i) => {
-          const positions = route.path.map(h => HUB_COORDS[h]);
+          const positions = getRoutePath(route.path);
           const color = ROUTE_COLORS[i % ROUTE_COLORS.length];
           return (
-            <AnimatedPolyline
-              key={`route-${i}`}
-              positions={positions}
-              color={color}
-              weight={3}
-              animate={animate}
-              delay={i * 200}
-            />
+            <div key={`route-${i}`}>
+              {/* Shadow layer */}
+              <AnimatedPolyline positions={positions} color="rgba(0,0,0,0.08)" weight={6}
+                animate={animate} delay={i * 200} opacity={0.5} />
+              {/* Main line */}
+              <AnimatedPolyline positions={positions} color={color} weight={3}
+                animate={animate} delay={i * 200} />
+            </div>
           );
         })}
 
-        {/* Best route — glow layer */}
-        {bestPath.length > 1 && (
-          <AnimatedPolyline
-            positions={bestPath.map(h => HUB_COORDS[h])}
-            color="#00D1B2"
-            weight={14}
-            animate={animate}
-            delay={nonBestRoutes.length * 200 + 200}
-          />
+        {/* Best route — shadow for depth */}
+        {bestRoutePath.length > 1 && (
+          <AnimatedPolyline positions={bestRoutePath} color="rgba(0,0,0,0.1)" weight={16}
+            animate={animate} delay={nonBestRoutes.length * 200 + 200} opacity={0.3} />
         )}
 
-        {/* Best route — main line */}
-        {bestPath.length > 1 && (
-          <AnimatedPolyline
-            positions={bestPath.map(h => HUB_COORDS[h])}
-            color="#00D1B2"
-            weight={5}
-            animate={animate}
-            delay={nonBestRoutes.length * 200 + 200}
-          />
+        {/* Best route — glow */}
+        {bestRoutePath.length > 1 && (
+          <AnimatedPolyline positions={bestRoutePath} color="#10B981" weight={10}
+            animate={animate} delay={nonBestRoutes.length * 200 + 200} opacity={0.15} />
         )}
 
-        {/* Moving parcel dot on best route */}
-        <ParcelDot
-          positions={bestPath.map(h => HUB_COORDS[h])}
-          animate={animate && bestPath.length > 1}
-        />
+        {/* Best route — main */}
+        {bestRoutePath.length > 1 && (
+          <AnimatedPolyline positions={bestRoutePath} color="#10B981" weight={4}
+            animate={animate} delay={nonBestRoutes.length * 200 + 200} />
+        )}
 
-        {/* Hub markers */}
+        {/* Parcel dot */}
+        <ParcelDot positions={bestRoutePath} animate={animate && bestRoutePath.length > 1} />
+
+        {/* Hub markers with 3D shadow */}
         {Object.entries(HUB_COORDS).map(([hub, coords]) => (
-          <Marker
-            key={hub}
-            position={coords}
-            icon={createHubIcon(hub, bestPath.includes(hub))}
-          >
-            <Tooltip direction="top" offset={[0, -24]} permanent={false}>
-              <span style={{ fontFamily: 'Inter', fontWeight: 600, fontSize: '13px' }}>
+          <Marker key={hub} position={coords}
+            icon={createHubIcon(hub, bestPath.includes(hub))}>
+            <Tooltip direction="top" offset={[0, -26]} permanent={false}>
+              <span style={{ fontFamily: 'Inter', fontWeight: 600, fontSize: 13 }}>
                 {HUB_NAMES[hub]}
               </span>
             </Tooltip>
