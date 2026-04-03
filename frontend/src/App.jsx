@@ -36,7 +36,7 @@ export default function App() {
       const res = await fetch(`${API_URL}/optimize`);
       if (!res.ok) {
         const body = await res.json().catch(() => null);
-        throw new Error(body?.error || `Server responded with ${res.status}`);
+        throw new Error(body?.error || `Server error ${res.status}`);
       }
       const result = await res.json();
       if (result.error) throw new Error(result.error);
@@ -61,10 +61,10 @@ export default function App() {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#F8FAFC' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', height: '100vh', background: '#0B1120' }}>
       <Header />
 
-      {/* ── Horizontal Step Bar ── */}
+      {/* ═══ Horizontal Step Bar (dark zone) ═══ */}
       {(loading || currentStep > 0) && (
         <div style={{ padding: '12px 24px 0' }}>
           <div className="step-bar">
@@ -77,7 +77,7 @@ export default function App() {
                     <div className={`step-dot ${isActive ? 'active' : isCompleted ? 'completed' : 'pending'}`} />
                     <span style={{
                       fontSize: 12, fontWeight: isActive ? 700 : 500,
-                      color: isActive ? '#10B981' : isCompleted ? '#10B981' : '#94A3B8',
+                      color: isActive ? '#10B981' : isCompleted ? '#34D399' : '#4B5563',
                     }}>
                       {isCompleted ? '✓ ' : ''}{step.label}
                     </span>
@@ -92,14 +92,12 @@ export default function App() {
         </div>
       )}
 
-      {/* ── Main Content ── */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', padding: '16px 24px 24px' }}>
-        {/* MAP (LEFT) */}
+      {/* ═══ Main Content ═══ */}
+      <div style={{ display: 'flex', flex: 1, overflow: 'hidden', padding: 20, gap: 0 }}>
+        {/* ── DARK MAP ZONE (LEFT) ── */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 10, marginRight: 20 }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span className="section-label" style={{ borderBottom: 'none', marginBottom: 0, paddingBottom: 0 }}>
-              🗺️ Route Visualization
-            </span>
+            <span className="section-label-dark">🗺️ Route Visualization</span>
             {data && (
               <div style={{ display: 'flex', gap: 14, fontSize: 11 }}>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
@@ -108,26 +106,28 @@ export default function App() {
                 </span>
                 <span style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ width: 14, height: 4, borderRadius: 2, background: '#10B981', display: 'inline-block' }} />
-                  <span style={{ color: '#10B981', fontWeight: 600 }}>Best Route</span>
+                  <span style={{ color: '#10B981', fontWeight: 600 }}>Best</span>
                 </span>
               </div>
             )}
           </div>
           <div style={{
             flex: 1, borderRadius: 18, overflow: 'hidden',
-            border: '1px solid #E5E7EB',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.06)',
+            border: '1px solid rgba(31,46,64,0.6)',
+            boxShadow: '0 4px 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)',
           }}>
             <MapView data={data} animate={animateMap} />
           </div>
         </div>
 
-        {/* ANALYTICS (RIGHT) */}
+        {/* ── LIGHT ANALYTICS PANEL (RIGHT) ── */}
         <div style={{
-          width: 400, overflowY: 'auto',
-          background: 'white', borderRadius: 18,
-          border: '1px solid #E5E7EB',
-          boxShadow: '0 2px 12px rgba(0,0,0,0.04)',
+          width: 400,
+          borderRadius: 18,
+          background: 'var(--light-bg)',
+          border: '1px solid rgba(229,231,235,0.8)',
+          boxShadow: '0 4px 24px rgba(0,0,0,0.15), 0 1px 3px rgba(0,0,0,0.06)',
+          overflowY: 'auto',
           padding: 20,
         }}>
           <DataPanel
